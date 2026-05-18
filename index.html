@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Base64编码解码工具 - 在线文本/文件转Base64</title>
+  <meta name="description" content="免费在线Base64编码解码工具，支持文本与文件互转，浏览器本地处理不上传。">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://fm-han.github.io/base64/">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #0a0a1a; color: #e2e8f0; font-family: system-ui, sans-serif; min-height: 100vh; }
+    .glass { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px); border-radius: 16px; }
+    .btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); transition: all 0.3s; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(99,102,241,0.4); }
+    .btn-outline { border: 1px solid rgba(99,102,241,0.4); transition: all 0.3s; }
+    .btn-outline:hover { background: rgba(99,102,241,0.1); }
+    textarea { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #e2e8f0; resize: vertical; }
+    textarea:focus { outline: none; border-color: #6366f1; }
+    .drop-zone { border: 2px dashed rgba(99,102,241,0.4); transition: all 0.3s; }
+    .drop-zone.dragover { border-color: #6366f1; background: rgba(99,102,241,0.1); }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-start p-6">
+
+  <header class="text-center mb-8">
+    <h1 class="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Base64 编码解码工具</h1>
+    <p class="text-gray-400 mt-2 text-sm">文本与文件互转，浏览器本地处理</p>
+  </header>
+
+  <main class="w-full max-w-2xl flex flex-col gap-4">
+
+    <!-- 模式切换 -->
+    <div class="flex gap-2 flex-wrap">
+      <button onclick="setMode('encode')" id="btn-encode" class="px-4 py-2 rounded-lg text-sm text-indigo-400 border border-indigo-500 bg-indigo-500/10">文本 → Base64</button>
+      <button onclick="setMode('decode')" id="btn-decode" class="btn-outline px-4 py-2 rounded-lg text-sm text-gray-400">Base64 → 文本</button>
+      <button onclick="setMode('file-encode')" id="btn-file-encode" class="btn-outline px-4 py-2 rounded-lg text-sm text-gray-400">文件 → Base64</button>
+    </div>
+
+    <!-- 文本输入区 -->
+    <div id="textPanel" class="glass p-4">
+      <label class="text-xs text-gray-500 block mb-2">输入</label>
+      <textarea id="input" rows="5" class="w-full p-3" placeholder="输入文本..."></textarea>
+    </div>
+
+    <!-- 文件上传区 -->
+    <div id="filePanel" class="hidden">
+      <div id="dropZone" class="drop-zone glass p-8 text-center cursor-pointer" onclick="document.getElementById('fileInput').click()">
+        <input type="file" id="fileInput" class="hidden" onchange="handleFile(this.files[0])">
+        <div class="text-4xl mb-3">📎</div>
+        <p class="text-gray-300">点击选择文件，或拖拽到这里</p>
+        <p id="fileName" class="text-sm text-indigo-400 mt-2"></p>
+      </div>
+    </div>
+
+    <!-- 操作按钮 -->
+    <div class="flex gap-3">
+      <button onclick="process()" class="btn-primary flex-1 py-3 rounded-xl font-medium text-white">转换</button>
+      <button onclick="clearAll()" class="btn-outline px-4 py-3 rounded-xl text-gray-500 text-sm">清空</button>
+    </div>
+
+    <!-- 输出区 -->
+    <div class="glass p-4">
+      <div class="flex justify-between items-center mb-2">
+        <label class="text-xs text-gray-500">输出</label>
+        <button onclick="copy()" class="text-xs text-indigo-400 hover:text-indigo-300">复制</button>
+      </div>
+      <textarea id="output" rows="5" class="w-full p-3" readonly placeholder="结果将在此显示..."></textarea>
+    </div>
+
+    <!-- 文件下载 -->
+    <div id="downloadPanel" class="glass p-4 hidden">
+      <button onclick="downloadFile()" class="btn-primary w-full py-3 rounded-xl font-medium text-white">下载文件</button>
+    </div>
+
+  </main>
+
+  <script>
+    let mode = 'encode';
+    let currentFile = null;
+    let decodedBlob = null;
+
+    function setMode(m) {
+      mode = m;
+      const isFile = m === 'file-encode';
+      document.getElementById('textPanel').classList.toggle('hidden', isFile);
+      document.getElementById('filePanel').classList.toggle('hidden', !isFile);
+      document.getElementById('downloadPanel').classList.add('hidden');
+      ['encode','decode','file-encode'].forEach(x => {
+        const el = document.getElementById('btn-' + x);
+        el.className = x === m
+          ? 'px-4 py-2 rounded-lg text-sm text-indigo-400 border border-indigo-500 bg-indigo-500/10'
+          : 'btn-outline px-4 py-2 rounded-lg text-sm text-gray-400';
+      });
+      document.getElementById('input').placeholder = mode === 'decode' ? '粘贴 Base64 字符串...' : '输入文本...';
+    }
+
+    function process() {
+      const out = document.getElementById('output');
+      if (mode === 'encode') {
+        const raw = document.getElementById('input').value;
+        out.value = btoa(unescape(encodeURIComponent(raw)));
+      } else if (mode === 'decode') {
+        try {
+          out.value = decodeURIComponent(escape(atob(document.getElementById('input').value.trim())));
+        } catch { out.value = '解码失败，请确认输入是正确的 Base64 字符串'; }
+      } else if (mode === 'file-encode') {
+        if (!currentFile) { out.value = '请先选择文件'; return; }
+        const reader = new FileReader();
+        reader.onload = () => { out.value = reader.result; };
+        reader.readAsDataURL(currentFile);
+        return;
+      }
+    }
+
+    function handleFile(f) {
+      if (!f) return;
+      currentFile = f;
+      document.getElementById('fileName').textContent = f.name + ' (' + Math.round(f.size / 1024) + ' KB)';
+    }
+
+    function downloadFile() {
+      if (!decodedBlob) return;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(decodedBlob);
+      a.download = currentFile.name;
+      a.click();
+    }
+
+    function copy() {
+      const v = document.getElementById('output').value;
+      if (!v) return;
+      navigator.clipboard.writeText(v).then(() => {
+        const btn = document.querySelector('[onclick="copy()"]');
+        btn.textContent = '已复制!';
+        setTimeout(() => btn.textContent = '复制', 1500);
+      });
+    }
+
+    function clearAll() {
+      document.getElementById('input').value = '';
+      document.getElementById('output').value = '';
+      document.getElementById('fileName').textContent = '';
+      currentFile = null;
+    }
+
+    // drag & drop
+    const dz = document.getElementById('dropZone');
+    ['dragenter','dragover','dragleave','drop'].forEach(e => dz.addEventListener(e, ev => ev.preventDefault()));
+    dz.addEventListener('dragover', () => dz.classList.add('dragover'));
+    dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+    dz.addEventListener('drop', e => {
+      dz.classList.remove('dragover');
+      if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+    });
+  </script>
+</body>
+</html>
