@@ -3,156 +3,100 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Base64编码解码工具 - 在线文本/文件转Base64</title>
-  <meta name="description" content="免费在线Base64编码解码工具，支持文本与文件互转，浏览器本地处理不上传。">
+  <title>Base64编码解码工具 - 在线文本/文件Base64转换</title>
+  <meta name="description" content="免费在线Base64编码解码工具，支持文本与Base64互转、文件转Base64，浏览器本地处理不上传。">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://fm-han.github.io/base64/">
-  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { background: #0a0a1a; color: #e2e8f0; font-family: system-ui, sans-serif; min-height: 100vh; }
-    .glass { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(20px); border-radius: 16px; }
-    .btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); transition: all 0.3s; }
-    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(99,102,241,0.4); }
-    .btn-outline { border: 1px solid rgba(99,102,241,0.4); transition: all 0.3s; }
-    .btn-outline:hover { background: rgba(99,102,241,0.1); }
-    textarea { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #e2e8f0; resize: vertical; }
-    textarea:focus { outline: none; border-color: #6366f1; }
-    .drop-zone { border: 2px dashed rgba(99,102,241,0.4); transition: all 0.3s; }
-    .drop-zone.dragover { border-color: #6366f1; background: rgba(99,102,241,0.1); }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; color: #333; line-height: 1.6; background: #fafafa; }
+    h1 { text-align: center; font-size: 1.8rem; color: #1a1a1a; }
+    h1 small { display: block; font-size: 0.85rem; color: #666; margin-top: 4px; font-weight: normal; }
+    .section { margin: 20px 0; padding: 16px; border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; }
+    .section label { display: block; font-weight: 600; margin-bottom: 8px; }
+    textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; box-sizing: border-box; font-family: monospace; resize: vertical; min-height: 120px; }
+    .buttons { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    button { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; }
+    .btn-encode { background: #007bff; color: #fff; }
+    .btn-decode { background: #28a745; color: #fff; }
+    .btn-clear { background: #6c757d; color: #fff; }
+    .btn-copy { background: #ffc107; color: #333; }
+    .drop-zone { border: 2px dashed #ccc; padding: 24px; text-align: center; border-radius: 8px; cursor: pointer; margin-bottom: 12px; }
+    .drop-zone:hover { border-color: #007bff; background: #f0f7ff; }
+    button:hover { opacity: 0.9; }
+    .result { margin-top: 12px; padding: 12px; background: #f8f9fa; border-radius: 6px; word-break: break-all; font-family: monospace; font-size: 0.9rem; max-height: 200px; overflow-y: auto; }
+    .footer { text-align: center; margin: 24px 0; padding: 12px; font-size: 0.85rem; color: #28a745; font-weight: 500; }
   </style>
 </head>
-<body class="flex flex-col items-center justify-start p-6">
+<body>
 
-  <header class="text-center mb-8">
-    <h1 class="text-3xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">Base64 编码解码工具</h1>
-    <p class="text-gray-400 mt-2 text-sm">文本与文件互转，浏览器本地处理</p>
-  </header>
+  <h1>Base64编码解码工具 <small>文本互转 / 文件转换 / 浏览器本地处理</small></h1>
 
-  <main class="w-full max-w-2xl flex flex-col gap-4">
-
-    <!-- 模式切换 -->
-    <div class="flex gap-2 flex-wrap">
-      <button onclick="setMode('encode')" id="btn-encode" class="px-4 py-2 rounded-lg text-sm text-indigo-400 border border-indigo-500 bg-indigo-500/10">文本 → Base64</button>
-      <button onclick="setMode('decode')" id="btn-decode" class="btn-outline px-4 py-2 rounded-lg text-sm text-gray-400">Base64 → 文本</button>
-      <button onclick="setMode('file-encode')" id="btn-file-encode" class="btn-outline px-4 py-2 rounded-lg text-sm text-gray-400">文件 → Base64</button>
+  <div class="section">
+    <label>文本模式</label>
+    <textarea id="textInput" placeholder="输入文本进行Base64编码或解码..."></textarea>
+    <div class="buttons">
+      <button class="btn-encode" onclick="textEncode()">编码 →</button>
+      <button class="btn-decode" onclick="textDecode()">← 解码</button>
+      <button class="btn-copy" onclick="copyResult()">复制结果</button>
+      <button class="btn-clear" onclick="clearText()">清空</button>
     </div>
+  </div>
 
-    <!-- 文本输入区 -->
-    <div id="textPanel" class="glass p-4">
-      <label class="text-xs text-gray-500 block mb-2">输入</label>
-      <textarea id="input" rows="5" class="w-full p-3" placeholder="输入文本..."></textarea>
+  <div class="section">
+    <label>文件模式</label>
+    <div class="drop-zone" onclick="document.getElementById('fileInput').click()">
+      <input type="file" id="fileInput" class="hidden" onchange="fileToBase64(this.files[0])">
+      <p>点击选择文件，或拖拽文件到此处</p>
+      <p style="color:#888;font-size:0.85rem;margin-top:8px;">支持任意格式文件</p>
     </div>
+    <div id="fileResult" class="result" style="display:none;"></div>
+  </div>
 
-    <!-- 文件上传区 -->
-    <div id="filePanel" class="hidden">
-      <div id="dropZone" class="drop-zone glass p-8 text-center cursor-pointer" onclick="document.getElementById('fileInput').click()">
-        <input type="file" id="fileInput" class="hidden" onchange="handleFile(this.files[0])">
-        <div class="text-4xl mb-3">📎</div>
-        <p class="text-gray-300">点击选择文件，或拖拽到这里</p>
-        <p id="fileName" class="text-sm text-indigo-400 mt-2"></p>
-      </div>
-    </div>
+  <div class="section">
+    <label>结果</label>
+    <div id="result" class="result">等待输入...</div>
+  </div>
 
-    <!-- 操作按钮 -->
-    <div class="flex gap-3">
-      <button onclick="process()" class="btn-primary flex-1 py-3 rounded-xl font-medium text-white">转换</button>
-      <button onclick="clearAll()" class="btn-outline px-4 py-3 rounded-xl text-gray-500 text-sm">清空</button>
-    </div>
-
-    <!-- 输出区 -->
-    <div class="glass p-4">
-      <div class="flex justify-between items-center mb-2">
-        <label class="text-xs text-gray-500">输出</label>
-        <button onclick="copy()" class="text-xs text-indigo-400 hover:text-indigo-300">复制</button>
-      </div>
-      <textarea id="output" rows="5" class="w-full p-3" readonly placeholder="结果将在此显示..."></textarea>
-    </div>
-
-    <!-- 文件下载 -->
-    <div id="downloadPanel" class="glass p-4 hidden">
-      <button onclick="downloadFile()" class="btn-primary w-full py-3 rounded-xl font-medium text-white">下载文件</button>
-    </div>
-
-  </main>
+  <div class="footer">100% 免费 · 数据不上传服务器 · 仅浏览器本地处理</div>
 
   <script>
-    let mode = 'encode';
-    let currentFile = null;
-    let decodedBlob = null;
-
-    function setMode(m) {
-      mode = m;
-      const isFile = m === 'file-encode';
-      document.getElementById('textPanel').classList.toggle('hidden', isFile);
-      document.getElementById('filePanel').classList.toggle('hidden', !isFile);
-      document.getElementById('downloadPanel').classList.add('hidden');
-      ['encode','decode','file-encode'].forEach(x => {
-        const el = document.getElementById('btn-' + x);
-        el.className = x === m
-          ? 'px-4 py-2 rounded-lg text-sm text-indigo-400 border border-indigo-500 bg-indigo-500/10'
-          : 'btn-outline px-4 py-2 rounded-lg text-sm text-gray-400';
-      });
-      document.getElementById('input').placeholder = mode === 'decode' ? '粘贴 Base64 字符串...' : '输入文本...';
+    function textEncode() {
+      const input = document.getElementById('textInput').value;
+      if (!input) { document.getElementById('result').textContent = '请输入文本'; return; }
+      const encoded = btoa(unescape(encodeURIComponent(input)));
+      document.getElementById('result').textContent = encoded;
     }
 
-    function process() {
-      const out = document.getElementById('output');
-      if (mode === 'encode') {
-        const raw = document.getElementById('input').value;
-        out.value = btoa(unescape(encodeURIComponent(raw)));
-      } else if (mode === 'decode') {
-        try {
-          out.value = decodeURIComponent(escape(atob(document.getElementById('input').value.trim())));
-        } catch { out.value = '解码失败，请确认输入是正确的 Base64 字符串'; }
-      } else if (mode === 'file-encode') {
-        if (!currentFile) { out.value = '请先选择文件'; return; }
-        const reader = new FileReader();
-        reader.onload = () => { out.value = reader.result; };
-        reader.readAsDataURL(currentFile);
-        return;
-      }
+    function textDecode() {
+      const input = document.getElementById('textInput').value;
+      if (!input) { document.getElementById('result').textContent = '请输入文本'; return; }
+      try {
+        const decoded = decodeURIComponent(escape(atob(input)));
+        document.getElementById('result').textContent = decoded;
+      } catch (e) { document.getElementById('result').textContent = '解码失败: 无效的Base64字符串'; }
     }
 
-    function handleFile(f) {
-      if (!f) return;
-      currentFile = f;
-      document.getElementById('fileName').textContent = f.name + ' (' + Math.round(f.size / 1024) + ' KB)';
+    function fileToBase64(file) {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = document.getElementById('fileResult');
+        result.style.display = 'block';
+        result.innerHTML = `<b>${file.name}</b> (${(file.size/1024).toFixed(1)} KB)<br><br><textarea style="height:100px">${reader.result}</textarea>`;
+      };
+      reader.readAsDataURL(file);
     }
 
-    function downloadFile() {
-      if (!decodedBlob) return;
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(decodedBlob);
-      a.download = currentFile.name;
-      a.click();
+    function copyResult() {
+      const text = document.getElementById('result').textContent;
+      if (text && text !== '等待输入...') navigator.clipboard.writeText(text).then(() => alert('已复制!'));
     }
 
-    function copy() {
-      const v = document.getElementById('output').value;
-      if (!v) return;
-      navigator.clipboard.writeText(v).then(() => {
-        const btn = document.querySelector('[onclick="copy()"]');
-        btn.textContent = '已复制!';
-        setTimeout(() => btn.textContent = '复制', 1500);
-      });
+    function clearText() {
+      document.getElementById('textInput').value = '';
+      document.getElementById('result').textContent = '等待输入...';
+      document.getElementById('fileResult').style.display = 'none';
     }
-
-    function clearAll() {
-      document.getElementById('input').value = '';
-      document.getElementById('output').value = '';
-      document.getElementById('fileName').textContent = '';
-      currentFile = null;
-    }
-
-    // drag & drop
-    const dz = document.getElementById('dropZone');
-    ['dragenter','dragover','dragleave','drop'].forEach(e => dz.addEventListener(e, ev => ev.preventDefault()));
-    dz.addEventListener('dragover', () => dz.classList.add('dragover'));
-    dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
-    dz.addEventListener('drop', e => {
-      dz.classList.remove('dragover');
-      if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
-    });
   </script>
 </body>
 </html>
